@@ -7,7 +7,7 @@ from tqdm import tqdm
 file_name = "tiktok_videos.json"
 clean_file_name = "clean_tiktok_videos.json"
 video_limit = 15
-hashtag = "bolu"
+hashtag = "Atatürk"
 
 emoji_pattern = re.compile("["
                                u"\U0001F600-\U0001F64F"  # emoticons
