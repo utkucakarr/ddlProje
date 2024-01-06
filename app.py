@@ -1,23 +1,13 @@
 from tiktokapipy.api import TikTokAPI
-import pandas as pd
 import json
 import re
 import string
-import zeyrek
-import nltk
 from tqdm import tqdm
-from nltk.corpus import stopwords
-
-nltk.download('punkt')
-nltk.download('stopwords')
-
-analyzer = zeyrek.MorphAnalyzer()
-stop_words = set(stopwords.words('turkish'))
 
 file_name = "tiktok_videos.json"
 clean_file_name = "clean_tiktok_videos.json"
 video_limit = 15
-hashtag = "yeni yıl"
+hashtag = "bolu"
 
 emoji_pattern = re.compile("["
                                u"\U0001F600-\U0001F64F"  # emoticons
@@ -50,7 +40,7 @@ def formatter_text(text):
     result = ''
     for item in text:
         if item == '':
-            result += ' '  # Adding space for empty strings
+            result += ''  # Adding space for empty strings
         else:
             result += item
 
@@ -67,25 +57,27 @@ def clean_desc(tweets):
             tweet_string = re.sub('http://\S+|https://\S+', '', tweet_string) #tweetler içerisindeki linkler temizleniyor
             tweet_string = tweet_string.translate(str.maketrans("", "", string.punctuation)) #tweetlerdeki noktalama işaretleri temizleniyor
             tweet_string = emoji_pattern.sub(r'', tweet_string)  #tweet içerisindeki emojiler temizleniyor
-            lemm_tweet = analyzer.lemmatize(tweet_string)  #tweetler için lemmatize işlemi gerçekleştiriliyor
-            lemm_tweet=[el[1][-1] for el in lemm_tweet]
-            for r in lemm_tweet:     
-                if not r in stop_words: 
-                    nsw.append(r)       #stopwords olmayanlar ayrılıyor ve aşağıda birleştiriliyor
-                    
-            clear_tweet =' '.join(nsw)  #dizi string hale getiriliyor
-            nsw=[]
-            clear_tweet = clear_tweet.lower() #bütün tweetler küçük harflere çevriliyor
-            tweet.append(clear_tweet) #temizlenmiş tweetin kendisi listeye ekleniyor
+            
+            if(tweet_string == ''):
+                continue
+            
+            if(len(tweet) == 0 and tweet_string == ' '):
+                continue
+
+            if(tweet_string == ' ' and len(tweet) > 0 and tweet[-1] == ' '):
+                continue
+
+            tweet.append(tweet_string) #temizlenmiş tweetin kendisi listeye ekleniyor
 
     return tweet
 
 def get_challenge_videos_scroll_down():
     # scroll down for 2.5 seconds when making requests
-    with TikTokAPI(navigation_timeout=15.0) as api:
+    with TikTokAPI(navigation_timeout=15) as api:
         challenge = api.challenge(hashtag)
         tiktok_videos = []
         for video in challenge.videos.limit(video_limit):
+            print(video)
             tiktok_videos.append({
                 "video_url": video.id,
                 "video_desc": video.desc
@@ -98,7 +90,9 @@ def get_challenge_videos_scroll_down():
         clean_videos = []
         for video in tiktok_videos:
             # Join non-empty elements with a space
-            video["video_desc"] = formatter_text(clean_desc(video["video_desc"]))
+            clean_text = clean_desc(video["video_desc"])
+            video["video_desc"] = formatter_text(clean_text)
+
             clean_videos.append(video)
         
         # Temizlenen veri kaydediliyor
